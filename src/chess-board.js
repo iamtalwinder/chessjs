@@ -1,4 +1,16 @@
 import BoardSquare from "./board-square.js";
+import wP from "./img/chesspieces/wP.png";
+import wN from "./img/chesspieces/wN.png";
+import wB from "./img/chesspieces/wB.png";
+import wR from "./img/chesspieces/wR.png";
+import wQ from "./img/chesspieces/wQ.png";
+import wK from "./img/chesspieces/wK.png";
+import bP from "./img/chesspieces/bP.png";
+import bN from "./img/chesspieces/bN.png";
+import bB from "./img/chesspieces/bB.png";
+import bR from "./img/chesspieces/bR.png";
+import bQ from "./img/chesspieces/bQ.png";
+import bK from "./img/chesspieces/bK.png";
 
 export default class ChessBoard {
 	constructor(orientation) {
@@ -14,6 +26,20 @@ export default class ChessBoard {
 		this.boardPositions = {
 			START: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
 			RUY_LOPEZ: "r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R",
+		};
+		this.pieceImages = {
+			WP: wP,
+			WN: wN,
+			WB: wB,
+			WR: wR,
+			WQ: wQ,
+			BK: bK,
+			BP: bP,
+			BN: bN,
+			BB: bB,
+			BR: bR,
+			BQ: bQ,
+			BK: bK,
 		};
 		this.init();
 	}
@@ -59,7 +85,7 @@ export default class ChessBoard {
 				const boardSquare = this.boardSquares.get(file * 10 + rank);
 				boardSquare.piece = fen[i];
 
-				const pieceImage = this.getPieceImage(fen[i]);
+				const pieceImage = this.getPieceImg(fen[i]);
 				boardSquare.div.appendChild(pieceImage);
 
 				file = ++file % 8 === 0 ? 8 : file % 8;
@@ -70,17 +96,17 @@ export default class ChessBoard {
 		}
 	}
 
-	getPieceImage(piece) {
-		const pieceImage = document.createElement("IMG");
-		pieceImage.setAttribute("src", this.imageURL(piece));
+	getPieceImg(piece) {
+		const pieceImage = new Image();
+		pieceImage.src = this.pieceImages[this.pieceImage(piece)];
 		return pieceImage;
 	}
 
-	imageURL(piece) {
+	pieceImage(piece) {
 		if (this.isUpper(piece)) {
-			return `img/chesspieces/w${piece}.png`;
+			return `W${piece}`;
 		} else {
-			return `img/chesspieces/b${piece}.png`;
+			return `B${piece.toUpperCase()}`;
 		}
 	}
 

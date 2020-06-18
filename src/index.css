@@ -1,0 +1,17 @@
+body {
+	display: flex;
+	justify-content: center;
+}
+
+#chess-board {
+	display: grid;
+	width: 700px;
+	min-height: 700px;
+	border: 3px solid black;
+	grid-template-columns: repeat(8, 1fr);
+	grid-template-rows: repeat(8, 1fr);
+}
+
+.board-square {
+	border: 1px solid black;
+}

@@ -15,7 +15,7 @@ export default class BoardSquare {
 		div.style.backgroundColor = color;
 		div.style.gridColumnStart = x;
 		div.style.gridRowStart = y;
-		div.className = "div";
+		div.className = "board-square";
 		return div;
 	}
 }
