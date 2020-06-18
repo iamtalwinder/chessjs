@@ -1,26 +1,6 @@
-class BoardSquare {
-	constructor(color, file, rank, orientation) {
-		this.piece = "";
-		this.file = file;
-		this.rank = rank;
-		this.color = color;
-		if (orientation === "white") {
-			rank = 9 - rank;
-		}
-		this.div = this.createDiv(color, file, rank);
-	}
+import BoardSquare from "./board-square.js";
 
-	createDiv(color, x, y) {
-		const div = document.createElement("DIV");
-		div.style.backgroundColor = color;
-		div.style.gridColumnStart = x;
-		div.style.gridRowStart = y;
-		div.className = "div";
-		return div;
-	}
-}
-
-class ChessBoard {
+export default class ChessBoard {
 	constructor(orientation) {
 		this.orientation = orientation || "white";
 		this.file = ["a", "b", "c", "d", "e", "f", "g", "h"];
@@ -150,8 +130,6 @@ class ChessBoard {
 		return false;
 	}
 }
-
-const chessBoard = new ChessBoard();
 
 // //unselect element
 // if (
