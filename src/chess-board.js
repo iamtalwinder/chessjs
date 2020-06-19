@@ -41,10 +41,9 @@ export default class ChessBoard {
 			BQ: bQ,
 			BK: bK,
 		};
-		this.init();
 	}
 
-	init() {
+	initBoard() {
 		let color, file, rank;
 		for (let i = 1; i <= 64; i++) {
 			file = i % 8 === 0 ? 8 : i % 8;
@@ -72,10 +71,17 @@ export default class ChessBoard {
 			document.getElementById("chess-board").appendChild(boardSquare.div);
 			this.boardSquares.set(file * 10 + rank, boardSquare);
 		}
-		this.layPieces(this.boardPositions.RUY_LOPEZ);
 	}
 
-	layPieces(fen) {
+	removeAllPieces() {
+		this.boardSquares.forEach((boardSquare) => {
+			const pieceImg = boardSquare.div.firstChild;
+			if (pieceImg) pieceImg.remove();
+		});
+	}
+
+	position(fen) {
+		this.removeAllPieces();
 		let file = 1,
 			rank = 8;
 		for (let i = 0; i < fen.length; i++) {
