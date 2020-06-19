@@ -33,7 +33,7 @@ export default class ChessBoard {
 			WB: wB,
 			WR: wR,
 			WQ: wQ,
-			BK: bK,
+			WK: wK,
 			BP: bP,
 			BN: bN,
 			BB: bB,
