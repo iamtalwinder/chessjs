@@ -1,6 +1,5 @@
 export default class BoardSquare {
 	constructor(color, file, rank, name, orientation) {
-		this.piece = "";
 		this.file = file;
 		this.rank = rank;
 		this.name = name;
@@ -18,6 +17,7 @@ export default class BoardSquare {
 		div.style.gridColumnStart = x;
 		div.style.gridRowStart = y;
 		div.className = "board-square";
+		div.style.transition = "0.5s";
 		return div;
 	}
 

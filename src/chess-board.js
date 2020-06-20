@@ -25,11 +25,15 @@ export default class ChessBoard {
 			VALID_MOVE: "#3aa10e", //green
 			VALID_CAPTURE: "#a30d1f",
 			CHECK: "#e62d27",
+			CASTEL: "#13dde8",
 		};
 		this.boardPositions = {
 			START: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
 			RUY_LOPEZ:
 				"r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 0 3",
+			TEST:
+				"r3k2r/pb1q1ppp/2nb1n2/1pppp1B1/3PP3/1PNQ1N1P/P1P1BPP1/R3K2R b KQkq - 1 10",
+			TEST2: "r3k2r/p2Q1ppp/5n2/1Np2qB1/6B1/1P5P/P1P2Pb1/R3K2R b KQkq - 2 16",
 		};
 		this.pieceImages = {
 			WP: wP,
@@ -51,7 +55,6 @@ export default class ChessBoard {
 
 	initBoard(position) {
 		this.orientation = position.split(" ")[1];
-		console.log(this.orientation);
 
 		let color, file, rank;
 		for (let i = 1; i <= 64; i++) {
@@ -97,7 +100,6 @@ export default class ChessBoard {
 		});
 		if (this.orientation === "w") {
 			this.orientation = "b";
-			console.log(this.orientation);
 		} else {
 			this.orientation = "w";
 		}
@@ -126,7 +128,6 @@ export default class ChessBoard {
 				rank--;
 			} else if (isNaN(fen[i])) {
 				const boardSquare = this.boardSquares.get(file * 10 + rank);
-				boardSquare.piece = fen[i];
 
 				const pieceImage = this.getPieceImg(fen[i]);
 				boardSquare.div.appendChild(pieceImage);
@@ -167,7 +168,46 @@ export default class ChessBoard {
 
 		if (this.validSquareSelect(selectedBoardSquare)) {
 			this.activateBoardSquares(selectedBoardSquare);
+		} else if (this.chess.move(selectedBoardSquare.move)) {
+			this.makeMove(selectedBoardSquare);
+			this.flipBoard();
 		}
+	}
+
+	makeMove(selectedBoardSquare) {
+		const move = selectedBoardSquare.move;
+		const pieceImg = selectedBoardSquare.div.firstChild;
+		if (move === "O-O") {
+			this.castleRook(8, 6);
+		} else if (move === "O-O-O") {
+			this.castleRook(1, 4);
+		} else if (!pieceImg && move.split("x")[1]) {
+			let file = selectedBoardSquare.file;
+			let rank = this.activeBoardSquares[0].rank;
+			this.boardSquares.get(file * 10 + rank).div.firstChild.remove();
+		}
+		this.movePiece(this.activeBoardSquares[0], selectedBoardSquare);
+		this.unactivateBoardSquares();
+	}
+
+	castleRook(fromRookFile, toRookFile) {
+		let rank = 8;
+		if (this.chess.turn() === "b") {
+			//because we are doing this after the turn has been made
+			rank = 9 - rank;
+		}
+		const rookSquare = this.boardSquares.get(fromRookFile * 10 + rank);
+		const targetSquare = this.boardSquares.get(toRookFile * 10 + rank);
+		this.movePiece(rookSquare, targetSquare);
+	}
+
+	movePiece(from, to) {
+		const fromImg = from.div.firstChild;
+		fromImg.remove();
+		if (to.div.firstChild) {
+			to.div.firstChild.remove();
+		}
+		to.div.appendChild(fromImg);
 	}
 
 	getSelectedBoardSquare(div) {
@@ -198,27 +238,43 @@ export default class ChessBoard {
 
 	activateBoardSquares(selectedBoardSquare) {
 		if (this.activeBoardSquares.length) {
-			while (this.activeBoardSquares.length) {
-				const boardSquare = this.activeBoardSquares.pop();
-				boardSquare.restoreColor();
-				boardSquare.move = "";
-			}
+			this.unactivateBoardSquares();
 		}
 		selectedBoardSquare.changeColor(this.colors.SELECTED);
 		this.activeBoardSquares.push(selectedBoardSquare);
 		const moves = this.chess.moves({ square: selectedBoardSquare.name });
 
 		if (moves.length) {
+			console.log(moves);
 			moves.forEach((move) => {
 				let color,
 					squareName = move.split("x")[1];
-				console.log(move);
-				if (squareName) {
+				if (move == "O-O") {
+					let file = 7,
+						rank = 8;
+					if (this.chess.turn() === "w") {
+						rank = 1;
+					}
+					squareName = this.file[file - 1] + rank;
+					color = this.colors.CASTEL;
+				} else if (move == "O-O-O") {
+					let file = 3,
+						rank = 8;
+					if (this.chess.turn() === "w") {
+						rank = 1;
+					}
+					squareName = this.file[file - 1] + rank;
+					color = this.colors.CASTEL;
+				} else if (squareName) {
 					color = this.colors.VALID_CAPTURE;
 				} else {
 					color = this.colors.VALID_MOVE;
 					if (move.length > 2) {
-						squareName = move[move.length - 2] + move[move.length - 1];
+						if (isNaN(move[move.length - 1])) {
+							squareName = move[move.length - 3] + move[move.length - 2];
+						} else {
+							squareName = move[move.length - 2] + move[move.length - 1];
+						}
 					} else {
 						squareName = move;
 					}
@@ -230,6 +286,14 @@ export default class ChessBoard {
 				boardSquare.changeColor(color);
 				this.activeBoardSquares.push(boardSquare);
 			});
+		}
+	}
+
+	unactivateBoardSquares() {
+		while (this.activeBoardSquares.length) {
+			const boardSquare = this.activeBoardSquares.pop();
+			boardSquare.restoreColor();
+			boardSquare.move = "";
 		}
 	}
 
@@ -248,44 +312,3 @@ export default class ChessBoard {
 		return parseInt(fileNumber[name[0]] + name[1]);
 	}
 }
-
-// //unselect element
-// if (
-// 	this.movePiece.from &&
-// 	this.movePiece.from.element.isEqualNode(selectedSquare.element)
-// ) {
-// 	this.movePiece.from.element.style.backgroundColor = this.movePiece.from.color;
-// 	this.movePiece.from = null;
-// 	return;
-// }
-
-// //select element
-// if (
-// 	!this.selectedSquare ||
-// 	this.haveSameColorPiece(this.selectedSquare, selectedSquare)
-// ) {
-// 	selectedSquare.element.style.backgroundColor = this.onSelect;
-// 	if (this.movePiece.from) {
-// 		this.movePiece.from.element.style.backgroundColor = this.movePiece.from.color;
-// 	}
-// 	this.movePiece.from = selectedSquare;
-// 	return;
-// }
-
-// //move element
-// if (this.movePiece.from) {
-// 	if (
-// 		selectedSquare.piece == "" ||
-// 		!this.haveSameColorPiece(this.movePiece.from, selectedSquare)
-// 	) {
-// 		const fromImage = this.movePiece.from.element.firstChild;
-// 		fromImage.remove();
-// 		const toImage = selectedSquare.element.firstChild;
-// 		if (toImage) toImage.remove();
-// 		selectedSquare.element.appendChild(fromImage);
-// 		this.movePiece.from.element.style.backgroundColor = this.movePiece.from.color;
-// 		selectedSquare.piece = this.movePiece.from.piece;
-// 		this.movePiece.from.piece = "";
-// 		this.movePiece.from = null;
-// 	}
-// }
