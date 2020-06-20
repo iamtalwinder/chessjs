@@ -19,6 +19,7 @@
 		"webpack-dev-server": "^3.11.0"
 	},
 	"dependencies": {
+		"chess.js": "^0.10.3",
 		"lodash": "^4.17.15"
 	}
 }
