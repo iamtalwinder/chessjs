@@ -16,7 +16,7 @@ import bK from "./img/chesspieces/bK.png";
 export default class ChessBoard {
 	constructor() {
 		this.orientation = "w";
-		this.file = ["a", "b", "c", "d", "e", "f", "g", "h"];
+		this.files = ["a", "b", "c", "d", "e", "f", "g", "h"];
 		this.boardSquares = new Map();
 		this.colors = {
 			DARK: "#b58863",
@@ -34,6 +34,7 @@ export default class ChessBoard {
 			TEST:
 				"r3k2r/pb1q1ppp/2nb1n2/1pppp1B1/3PP3/1PNQ1N1P/P1P1BPP1/R3K2R b KQkq - 1 10",
 			TEST2: "r3k2r/p2Q1ppp/5n2/1Np2qB1/6B1/1P5P/P1P2Pb1/R3K2R b KQkq - 2 16",
+			PROMOTION: "r1bqkb1r/ppppppP1/2n2n2/8/8/8/PPPPPP1P/RNBQKBNR w KQkq - 1 5",
 		};
 		this.pieceImages = {
 			WP: wP,
@@ -51,6 +52,9 @@ export default class ChessBoard {
 		};
 		this.chess = new Chess();
 		this.activeBoardSquares = [];
+		this.promotionMoves = new Map();
+		this.wKBoardSquare = null;
+		this.bKBoardSquare = null;
 	}
 
 	initBoard(position) {
@@ -75,7 +79,7 @@ export default class ChessBoard {
 				}
 			}
 
-			const name = this.file[file - 1] + rank;
+			const name = this.files[file - 1] + rank;
 			const boardSquare = new BoardSquare(
 				color,
 				file,
@@ -90,6 +94,8 @@ export default class ChessBoard {
 			document.getElementById("chess-board").appendChild(boardSquare.div);
 			this.boardSquares.set(file * 10 + rank, boardSquare);
 		}
+		this.wKBoardSquare = this.boardSquares.get(51);
+		this.bKBoardSquare = this.boardSquares.get(58);
 		this.position(position);
 	}
 
@@ -168,10 +174,82 @@ export default class ChessBoard {
 
 		if (this.validSquareSelect(selectedBoardSquare)) {
 			this.activateBoardSquares(selectedBoardSquare);
-		} else if (this.chess.move(selectedBoardSquare.move)) {
+		} else if (this.isPromotion(selectedBoardSquare)) {
+			const div = this.activeBoardSquares[0].div;
+			if (div.firstChild) {
+				div.firstChild.remove();
+			}
+			if (this.chess.turn() === "w") {
+				div.appendChild(this.getPieceImg("Q"));
+			} else {
+				div.appendChild(this.getPieceImg("q"));
+			}
+			selectedBoardSquare.move = this.promotionMoves.get(
+				selectedBoardSquare.name + "." + "Q"
+			);
+		}
+
+		if (this.chess.move(selectedBoardSquare.move)) {
+			this.wKBoardSquare.restoreColor();
+			this.bKBoardSquare.restoreColor();
+			const name = selectedBoardSquare.name;
+			if (this.chess.get(name).type.toUpperCase() === "K") {
+				if (this.chess.turn() === "w") {
+					this.bKBoardSquare = selectedBoardSquare;
+				} else {
+					this.wKBoardSquare = selectedBoardSquare;
+				}
+			}
 			this.makeMove(selectedBoardSquare);
 			this.flipBoard();
+			this.promotionMoves.clear();
+			if (this.chess.in_check()) {
+				if (this.chess.turn() === "w") {
+					this.wKBoardSquare.changeColor(this.colors.CHECK);
+				} else {
+					this.bKBoardSquare.changeColor(this.colors.CHECK);
+				}
+			}
+
+			if (this.chess.in_checkmate()) {
+				let winner = "Black";
+				if (this.chess.turn() === "b") {
+					winner = "White";
+				}
+				alert(`${winner} wins`);
+			}
+
+			if (this.chess.insufficient_material()) {
+				alert("Draw insufficient material");
+			}
+
+			if (this.chess.in_draw()) {
+				alert("Draw by 50 move rule");
+			}
+
+			if (this.chess.in_threefold_repetition()) {
+				alert("Insufficient material");
+			}
+
+			if (this.chess.in_stalemate()) {
+				alert("Stalemate");
+			}
 		}
+	}
+
+	isPromotion(selectedBoardSquare) {
+		if (!this.activateBoardSquares[0]) {
+			return false;
+		}
+		const toRank = selectedBoardSquare.rank;
+		console.log(this.activeBoardSquares);
+		const fromPiece = this.chess.get(this.activeBoardSquares[0].name).type;
+		if (toRank === 1 || toRank === 8) {
+			if (fromPiece.toUpperCase() === "P") {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	makeMove(selectedBoardSquare) {
@@ -245,7 +323,6 @@ export default class ChessBoard {
 		const moves = this.chess.moves({ square: selectedBoardSquare.name });
 
 		if (moves.length) {
-			console.log(moves);
 			moves.forEach((move) => {
 				let color,
 					squareName = move.split("x")[1];
@@ -255,7 +332,7 @@ export default class ChessBoard {
 					if (this.chess.turn() === "w") {
 						rank = 1;
 					}
-					squareName = this.file[file - 1] + rank;
+					squareName = this.files[file - 1] + rank;
 					color = this.colors.CASTEL;
 				} else if (move == "O-O-O") {
 					let file = 3,
@@ -263,17 +340,22 @@ export default class ChessBoard {
 					if (this.chess.turn() === "w") {
 						rank = 1;
 					}
-					squareName = this.file[file - 1] + rank;
+					squareName = this.files[file - 1] + rank;
 					color = this.colors.CASTEL;
 				} else if (squareName) {
 					color = this.colors.VALID_CAPTURE;
+					if (move.split("=")[1]) {
+						squareName = this.extractToSquareNameFromMove(move.split("=")[0]);
+						this.setPromotionMove(move, squareName);
+					}
 				} else {
 					color = this.colors.VALID_MOVE;
 					if (move.length > 2) {
-						if (isNaN(move[move.length - 1])) {
-							squareName = move[move.length - 3] + move[move.length - 2];
+						if (move.split("=")[1]) {
+							squareName = this.extractToSquareNameFromMove(move.split("=")[0]);
+							this.setPromotionMove(move, squareName);
 						} else {
-							squareName = move[move.length - 2] + move[move.length - 1];
+							squareName = this.extractToSquareNameFromMove(move);
 						}
 					} else {
 						squareName = move;
@@ -287,6 +369,24 @@ export default class ChessBoard {
 				this.activeBoardSquares.push(boardSquare);
 			});
 		}
+	}
+
+	setPromotionMove(move, toSquareName) {
+		let promotionMove = move.split("=");
+		this.promotionMoves.set(
+			toSquareName + "." + promotionMove[1][0],
+			promotionMove.join("=")
+		);
+	}
+
+	extractToSquareNameFromMove(move) {
+		let squareName;
+		if (isNaN(move[move.length - 1])) {
+			squareName = move[move.length - 3] + move[move.length - 2];
+		} else {
+			squareName = move[move.length - 2] + move[move.length - 1];
+		}
+		return squareName;
 	}
 
 	unactivateBoardSquares() {
